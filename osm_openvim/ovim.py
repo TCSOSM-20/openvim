@@ -43,8 +43,8 @@ import openflow_conn
 
 __author__ = "Alfonso Tierno, Leonardo Mirabal"
 __date__ = "$06-Feb-2017 12:07:15$"
-__version__ = "0.5.24-r542"
-version_date = "Mar 2018"
+__version__ = "0.5.25-r545"
+version_date = "Jul 2018"
 database_version = 23      #needed database schema version
 
 HTTP_Bad_Request =          400
@@ -526,8 +526,12 @@ class ovim():
                                               WHERE={'net_id': network_id}, LIMIT=100)
             if len(ports) > 0:
                 content[0]['ports'] = ports
-
             convert_boolean(content, ('shared', 'admin_state_up', 'enable_dhcp'))
+
+            result, flows = self.db.get_table(FROM='of_flows', SELECT=('priority', 'vlan_id', 'ingress_port', 'src_mac', 'dst_mac', 'actions'),
+                                              WHERE={'net_id': network_id}, LIMIT=100)
+            if len(flows) > 0:
+                content[0]['flows'] = flows
             return content[0]
 
     def new_network(self, network):

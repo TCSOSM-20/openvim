@@ -137,8 +137,8 @@ class OF_conn(openflow_conn.OpenflowConn):
             if self.version == None:
                 if 'dpid' in info[0] and 'inetAddress' in info[0]:
                     self._set_version("0.9")
-                elif 'switchDPID' in info[0] and 'inetAddress' in info[0]:
-                    self._set_version("1.X")
+                # elif 'switchDPID' in info[0] and 'inetAddress' in info[0]:
+                #     self._set_version("1.X")
                 else:
                     self.logger.error(
                         "get_of_switches. Unexpected response, not found 'dpid' or 'switchDPID' field: %s",
@@ -154,7 +154,7 @@ class OF_conn(openflow_conn.OpenflowConn):
             error_text = type(e).__name__ + ": " + str(e)
             self.logger.error("get_of_switches " + error_text)
             raise openflow_conn.OpenflowconnConnectionException(error_text)
-        except ValueError as e:
+        except Exception as e:
             # ValueError in the case that JSON can not be decoded
             error_text = type(e).__name__ + ": " + str(e)
             self.logger.error("get_of_switches " + error_text)
@@ -267,7 +267,7 @@ class OF_conn(openflow_conn.OpenflowConn):
             error_text = type(e).__name__ + ": " + str(e)
             self.logger.error("get_of_rules " + error_text)
             raise openflow_conn.OpenflowconnConnectionException(error_text)
-        except ValueError as e:
+        except Exception as e:
             # ValueError in the case that JSON can not be decoded
             error_text = type(e).__name__ + ": " + str(e)
             self.logger.error("get_of_rules " + error_text)
@@ -345,7 +345,7 @@ class OF_conn(openflow_conn.OpenflowConn):
             error_text = type(e).__name__ + ": " + str(e)
             self.logger.error("obtain_port_correspondence " + error_text)
             raise openflow_conn.OpenflowconnConnectionException(error_text)
-        except ValueError as e:
+        except Exception as e:
             # ValueError in the case that JSON can not be decoded
             error_text = type(e).__name__ + ": " + str(e)
             self.logger.error("obtain_port_correspondence " + error_text)
@@ -381,6 +381,11 @@ class OF_conn(openflow_conn.OpenflowConn):
             error_text = type(e).__name__ + ": " + str(e)
             self.logger.error("del_flow " + error_text)
             raise openflow_conn.OpenflowconnConnectionException(error_text)
+        except Exception as e:
+            # ValueError in the case that JSON can not be decoded
+            error_text = type(e).__name__ + ": " + str(e)
+            self.logger.error("del_flow " + error_text)
+            raise openflow_conn.OpenflowconnUnexpectedResponse(error_text)
 
     def new_flow(self, data):
         """
@@ -443,6 +448,11 @@ class OF_conn(openflow_conn.OpenflowConn):
             error_text = type(e).__name__ + ": " + str(e)
             self.logger.error("new_flow " + error_text)
             raise openflow_conn.OpenflowconnConnectionException(error_text)
+        except Exception as e:
+            # ValueError in the case that JSON can not be decoded
+            error_text = type(e).__name__ + ": " + str(e)
+            self.logger.error("new_flow " + error_text)
+            raise openflow_conn.OpenflowconnUnexpectedResponse(error_text)
 
     def clear_all_flows(self):
         """
@@ -470,4 +480,8 @@ class OF_conn(openflow_conn.OpenflowConn):
             error_text = type(e).__name__ + ": " + str(e)
             self.logger.error("clear_all_flows " + error_text)
             raise openflow_conn.OpenflowconnConnectionException(error_text)
-
+        except Exception as e:
+            # ValueError in the case that JSON can not be decoded
+            error_text = type(e).__name__ + ": " + str(e)
+            self.logger.error("clear_all_flows " + error_text)
+            raise openflow_conn.OpenflowconnUnexpectedResponse(error_text)

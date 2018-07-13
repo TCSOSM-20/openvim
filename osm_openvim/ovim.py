@@ -43,7 +43,7 @@ import openflow_conn
 
 __author__ = "Alfonso Tierno, Leonardo Mirabal"
 __date__ = "$06-Feb-2017 12:07:15$"
-__version__ = "0.5.25-r545"
+__version__ = "0.5.26-r546"
 version_date = "Jul 2018"
 database_version = 23      #needed database schema version
 

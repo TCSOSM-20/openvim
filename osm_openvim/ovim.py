@@ -43,7 +43,7 @@ import openflow_conn
 
 __author__ = "Alfonso Tierno, Leonardo Mirabal"
 __date__ = "$06-Feb-2017 12:07:15$"
-__version__ = "0.5.26-r546"
+__version__ = "0.5.27-r547"
 version_date = "Jul 2018"
 database_version = 23      #needed database schema version
 
@@ -1003,6 +1003,8 @@ class ovim():
             del port_data['compute_node']
 
         result, uuid = self.db.new_row('ports', port_data, True, True)
+        # set net status to BUILD
+        self.db.update_rows('nets', {"status": "BUILD"}, WHERE={'uuid': port_data['net_id']})
         if result > 0:
             try:
                 self.net_update_ofc_thread(port_data['net_id'], port_data['ofc_id'])
@@ -1071,17 +1073,19 @@ class ovim():
         elif result < 0:
             raise ovimException("Cannot delete port from database: {}".format(content), http_code=-result)
         # update network
-        network = ports[0].get('net_id', None)
-        if network:
+        net_id = ports[0].get('net_id', None)
+        if net_id:
             # change of net.
 
+            # set net status to BUILD
+            self.db.update_rows('nets', {"status": "BUILD"}, WHERE={'uuid': net_id})
             try:
-                self.net_update_ofc_thread(network, ofc_id=ports[0]["ofc_id"], switch_dpid=ports[0]["switch_dpid"])
+                self.net_update_ofc_thread(net_id, ofc_id=ports[0]["ofc_id"], switch_dpid=ports[0]["switch_dpid"])
             except ovimException as e:
-                raise ovimException("Cannot insert a task for delete network '{}' {}".format(network, str(e)),
+                raise ovimException("Cannot insert a task for delete network '{}' {}".format(net_id, str(e)),
                                     HTTP_Internal_Server_Error)
             except Exception as e:
-                raise ovimException("Cannot insert a task for delete network '{}' {}".format(network, str(e)),
+                raise ovimException("Cannot insert a task for delete network '{}' {}".format(net_id, str(e)),
                                     HTTP_Internal_Server_Error)
 
         return content

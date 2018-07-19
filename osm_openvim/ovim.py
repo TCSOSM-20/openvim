@@ -43,7 +43,7 @@ import openflow_conn
 
 __author__ = "Alfonso Tierno, Leonardo Mirabal"
 __date__ = "$06-Feb-2017 12:07:15$"
-__version__ = "0.5.27-r547"
+__version__ = "0.5.28-r548"
 version_date = "Jul 2018"
 database_version = 23      #needed database schema version
 
@@ -501,7 +501,7 @@ class ovim():
 
         return content
 
-    def show_network(self, network_id, db_filter={}):
+    def show_network(self, network_id, db_filter={}, skip_on_not_found=False):
         """
         Get network from DB by id
         :param network_id: net Id
@@ -518,7 +518,9 @@ class ovim():
         if result < 0:
             raise ovimException(str(content), -result)
         elif result == 0:
-            raise ovimException("show_network network '%s' not found" % network_id, -result)
+            if skip_on_not_found:
+                return
+            raise ovimException("show_network network '%s' not found" % network_id, HTTP_Not_Found)
         else:
             convert_boolean(content, ('shared', 'admin_state_up', 'enable_dhcp'))
             # get ports from DB
@@ -784,13 +786,15 @@ class ovim():
         else:
             raise ovimException(content, -result)
 
-    def delete_network(self, network_id):
+    def delete_network(self, network_id, idempotent=True):
         """
         Delete network by network id
         :param network_id:  network id
         :return:
         """
-        net_data = self.show_network(network_id)
+        net_data = self.show_network(network_id, skip_on_not_found=idempotent)
+        if not net_data:  # network does not exist
+            return
 
         # delete from the data base
         result, content = self.db.delete_row('nets', network_id)
@@ -1061,7 +1065,7 @@ class ovim():
             self.logger.error(message)
             raise ovimException(message, HTTP_Internal_Server_Error)
 
-    def delete_port(self, port_id):
+    def delete_port(self, port_id, idempotent=False):
         # Look for the previous port data
         result, ports = self.db.get_table(WHERE={'uuid': port_id, "type": "external"}, FROM='ports')
         if result < 0:
@@ -1069,6 +1073,8 @@ class ovim():
         # delete from the data base
         result, content = self.db.delete_row('ports', port_id)
         if result == 0:
+            if idempotent:
+                return
             raise ovimException("External port '{}' not found".format(port_id), http_code=HTTP_Not_Found)
         elif result < 0:
             raise ovimException("Cannot delete port from database: {}".format(content), http_code=-result)

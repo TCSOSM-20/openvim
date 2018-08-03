@@ -24,9 +24,9 @@ clean_build:
 prepare_lite:
 	#pip install --user --upgrade setuptools
 	mkdir -p build
-	#VER1=$(shell git describe | sed -e 's/^v//' |cut -d- -f1); \
-	#VER2=$(shell git describe | cut -d- -f2); \
-	#VER3=$(shell git describe | cut -d- -f3); \
+	#VER1=$(shell git describe --match v*| sed -e 's/^v//' |cut -d- -f1); \
+	#VER2=$(shell git describe --match v*| cut -d- -f2); \
+	#VER3=$(shell git describe --match v*| cut -d- -f3); \
 	#echo "$$VER1.dev$$VER2+$$VER3" > build/OVIM_VERSION
 	cp tox.ini build/
 	cp MANIFEST.in build/
@@ -52,9 +52,9 @@ prepare_lite:
 prepare:
 	#pip install --user --upgrade setuptools
 	mkdir -p build
-	#VER1=$(shell git describe | sed -e 's/^v//' |cut -d- -f1); \
-	#VER2=$(shell git describe | cut -d- -f2); \
-	#VER3=$(shell git describe | cut -d- -f3); \
+	#VER1=$(shell git describe --match v*| sed -e 's/^v//' |cut -d- -f1); \
+	#VER2=$(shell git describe --match v*| cut -d- -f2); \
+	#VER3=$(shell git describe --match v*| cut -d- -f3); \
 	#echo "$$VER1.dev$$VER2+$$VER3" > build/OPENVIM_VERSION
 	cp tox.ini build/
 	cp MANIFEST.in build/

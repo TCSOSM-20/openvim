@@ -41,7 +41,7 @@ _req = [
 __scripts__ = ['openflow-lib']
 
 setup(name=__name,
-      version_command=('git describe', 'pep440-git'),
+      version_command=('git describe --match v*', 'pep440-git'),
       description=__description,
       long_description=__description,
       author=__author,

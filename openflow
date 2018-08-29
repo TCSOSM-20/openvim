@@ -279,7 +279,7 @@ if __name__=="__main__":
     of_controller_password = os.getenv('OF_CONTROLLER_PASSWORD',None)
     #of_controller_version = os.getenv('OF_CONTROLLER_VERSION',"0.90")
     of_controller_ip = os.getenv('OF_CONTROLLER_IP',"localhost")
-    of_controller_port = os.getenv('OF_CONTROLLER_PORT',"7070")
+    of_controller_port = os.getenv('OF_CONTROLLER_PORT',"8080")
     of_controller_dpid = os.getenv('OF_CONTROLLER_DPID','00:01:02:03:e4:05:e6:07')
     of_controller_module = os.getenv('OF_CONTROLLER_MODULE',None)
     

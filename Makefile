@@ -46,6 +46,7 @@ prepare_lite:
 	cp openflow build/openflow-lib
 	sed -i "s/from osm_openvim/from lib_osm_openvim/g" build/openflow-lib
 	sed -i "s/import osm_openvim/import lib_osm_openvim/g" build/openflow-lib
+	sed -i "s/__import__(\"osm_openvim\.\"/__import__(\"lib_osm_openvim\.\"/g" build/openflow-lib
 	sed -i "s/import osm_openvim; print osm_openvim\.__path__\[0\]/import lib_osm_openvim; print lib_osm_openvim\.__path__\[0\]/g" build/lib_osm_openvim/database_utils/migrate_vim_db.sh
 	sed -i "s/__import__(\"osm_openvim\.\"/__import__(\"lib_osm_openvim\.\"/g" build/lib_osm_openvim/ovim.py
 

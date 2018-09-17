@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ##
-# Copyright 2015 Telefónica Investigación y Desarrollo, S.A.U.
+# Copyright 2015 Telefonica Investigacion y Desarrollo, S.A.U.
 # This file is part of openvim
 # All Rights Reserved.
 #
@@ -40,19 +40,18 @@ import logging
 #TODO: insert a logging system
 
 class dhcp_thread(threading.Thread):
-    def __init__(self, dhcp_params, db, db_lock, test, dhcp_nets, logger_name=None, debug=None):
+    def __init__(self, dhcp_params, db, test, dhcp_nets, logger_name=None, debug=None):
         '''Init a thread.
         Arguments: thread_info must be a dictionary with:
             'dhcp_params' dhcp server parameters with the following keys:
                 mandatory : user, host, port, key, ifaces(interface name list of the one managed by the dhcp)
                 optional:  password, key, port(22)
-            'db' 'db_lock': database class and lock for accessing it
+            'db': database class threading safe
             'test': in test mode no acces to a server is done, and ip is invented
         '''
         threading.Thread.__init__(self)
         self.dhcp_params = dhcp_params
         self.db = db
-        self.db_lock = db_lock
         self.test = test
         self.dhcp_nets = dhcp_nets
         self.ssh_conn = None
@@ -90,11 +89,9 @@ class dhcp_thread(threading.Thread):
     def load_mac_from_db(self):
         #TODO get macs to follow from the database
         self.logger.debug("load macs from db")
-        self.db_lock.acquire()
         r,c = self.db.get_table(SELECT=('mac','ip_address','nets.uuid as net_id', ),
                                 FROM='ports join nets on ports.net_id=nets.uuid', 
                                 WHERE_NOT={'ports.instance_id': None, 'nets.provider': None})
-        self.db_lock.release()
         now = time.time()
         self.mac_status ={}
         if r<0:
@@ -175,10 +172,8 @@ class dhcp_thread(threading.Thread):
             
             if self.mac_status[mac_address].get("active") == None:
                 #check from db if already active
-                self.db_lock.acquire()
                 r,c = self.db.get_table(FROM="ports as p join instances as i on p.instance_id=i.uuid",
                                         WHERE={"p.mac": mac_address, "i.status": "ACTIVE"})
-                self.db_lock.release()
                 if r>0:
                     self.mac_status[mac_address]["active"] = now
                     self.mac_status[mac_address]["next_reading"] = (int(now)/2 +1)* 2
@@ -189,9 +184,7 @@ class dhcp_thread(threading.Thread):
                     if now - self.mac_status[mac_address]["created"] > 300:
                         #modify Database to tell openmano that we can not get dhcp from the machine
                         if not self.mac_status[mac_address].get("ip"):
-                            self.db_lock.acquire()
                             r,c = self.db.update_rows("ports", {"ip_address": "0.0.0.0"}, {"mac": mac_address})
-                            self.db_lock.release()
                             self.mac_status[mac_address]["ip"] = "0.0.0.0"
                             self.logger.debug("mac %s >> set to 0.0.0.0 because of timeout", mac_address)
                         self.mac_status[mac_address]["next_reading"] = (int(now)/60 +1)* 60
@@ -233,9 +226,7 @@ class dhcp_thread(threading.Thread):
             if content:
                 self.mac_status[mac_address]["ip"] = content
                 #modify Database
-                self.db_lock.acquire()
                 r,c = self.db.update_rows("ports", {"ip_address": content}, {"mac": mac_address})
-                self.db_lock.release()
                 if r<0:
                     self.logger.error("Database update error: " + c)
                 else:
@@ -251,9 +242,7 @@ class dhcp_thread(threading.Thread):
             if now - self.mac_status[mac_address]["active"] > 120:
                 #modify Database to tell openmano that we can not get dhcp from the machine
                 if not self.mac_status[mac_address].get("ip"):
-                    self.db_lock.acquire()
                     r,c = self.db.update_rows("ports", {"ip_address": "0.0.0.0"}, {"mac": mac_address})
-                    self.db_lock.release()
                     self.mac_status[mac_address]["ip"] = "0.0.0.0"
                     self.logger.debug("mac %s >> set to 0.0.0.0 because of timeout", mac_address)
             

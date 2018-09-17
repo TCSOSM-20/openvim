@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ##
-# Copyright 2015 Telefónica Investigación y Desarrollo, S.A.U.
+# Copyright 2015 Telefonica Investigacion y Desarrollo, S.A.U.
 # This file is part of openvim
 # All Rights Reserved.
 #
@@ -653,7 +653,7 @@ def http_post_hosts():
             thread = ht.host_thread(name=host.get('name',ip_name), user=user, host=ip_name,
                                     password=host.get('password'),
                                     keyfile=host.get('keyfile', config_dic["host_ssh_keyfile"]),
-                                    db=config_dic['db'], db_lock=config_dic['db_lock'],
+                                    db=config_dic['db'],
                                     test=host_test_mode, image_path=config_dic['host_image_path'],
                                     version=config_dic['version'], host_id=content['uuid'],
                                     develop_mode=host_develop_mode, develop_bridge_iface=host_develop_bridge_iface,
@@ -1622,7 +1622,7 @@ def http_post_server_id(tenant_id):
             return
     #print json.dumps(server, indent=4)
      
-    result, content = ht.create_server(server, config_dic['db'], config_dic['db_lock'], config_dic['mode']=='normal')
+    result, content = ht.create_server(server, config_dic['db'], config_dic['mode']=='normal')
 
     if result >= 0:
     #Insert instance to database

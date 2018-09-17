@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 ##
-# Copyright 2015 Telefónica Investigación y Desarrollo, S.A.U.
+# Copyright 2015 Telefonica Investigacion y Desarrollo, S.A.U.
 # This file is part of openvim
 # All Rights Reserved.
 #
@@ -43,8 +43,8 @@ import openflow_conn
 
 __author__ = "Alfonso Tierno, Leonardo Mirabal"
 __date__ = "$06-Feb-2017 12:07:15$"
-__version__ = "0.5.28-r548"
-version_date = "Jul 2018"
+__version__ = "0.5.29-r549"
+version_date = "Sep 2018"
 database_version = 23      #needed database schema version
 
 HTTP_Bad_Request =          400
@@ -189,7 +189,6 @@ class ovim():
             self.get_version(), self.get_version_date(), self.get_database_version()))
         # create database connection for openflow threads
         self.config["db"] = self._create_database_connection()
-        self.config["db_lock"] = threading.Lock()
 
         self.of_test_mode = False if self.config['mode'] == 'normal' or self.config['mode'] == "OF only" else True
 
@@ -210,7 +209,7 @@ class ovim():
             thread = ht.host_thread(name=host['name'], user=host['user'], host=host['ip_name'], db=self.config["db"],
                                     password=host['password'],
                                     keyfile=host.get('keyfile', self.config["host_ssh_keyfile"]),
-                                    db_lock=self.config["db_lock"], test=host_test_mode,
+                                    test=host_test_mode,
                                     image_path=self.config['host_image_path'],
                                     version=self.config['version'], host_id=host['uuid'],
                                     develop_mode=host_develop_mode,
@@ -268,7 +267,7 @@ class ovim():
         dhcp_params = self.config.get("dhcp_server")
         if dhcp_params:
             thread = dt.dhcp_thread(dhcp_params=dhcp_params, test=host_test_mode, dhcp_nets=self.config["dhcp_nets"],
-                                    db=self.config["db"], db_lock=self.config["db_lock"],
+                                    db=self.config["db"],
                                     logger_name=self.logger_name + ".dhcp",
                                     debug=self.config.get('log_level_of'))
             thread.start()
@@ -325,7 +324,6 @@ class ovim():
         """
         Start ofc task for existing ofcs in database
         :param db_of:
-        :param db_lock:
         :return:
         """
         ofcs = self.get_of_controllers()
@@ -453,7 +451,6 @@ class ovim():
         ofc_net_same_vlan = False
 
         thread = oft.openflow_thread(ofc_uuid, of_conn, of_test=self.of_test_mode, db=self.config["db"],
-                                     db_lock=self.config["db_lock"],
                                      pmp_with_same_vlan=ofc_net_same_vlan,
                                      logger_name=self.logger_name + ".ofc." + ofc_uuid,
                                      debug=self.config.get('log_level_of'))
@@ -1436,7 +1433,7 @@ class ovim():
         dhcp_host = ht.host_thread(name='openvim_controller', user=ovs_controller_user, host=controller_ip,
                                    password=self.config.get('ovs_controller_password'),
                                    keyfile=self.config.get('ovs_controller_keyfile'),
-                                   db=self.config["db"], db_lock=self.config["db_lock"], test=host_test_mode,
+                                   db=self.config["db"], test=host_test_mode,
                                    image_path=self.config['host_image_path'], version=self.config['version'],
                                    host_id='openvim_controller', develop_mode=host_develop_mode,
                                    develop_bridge_iface=bridge_ifaces,

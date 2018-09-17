@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ##
-# Copyright 2015 Telefónica Investigación y Desarrollo, S.A.U.
+# Copyright 2015 Telefonica Investigacion y Desarrollo, S.A.U.
 # This file is part of openvim
 # All Rights Reserved.
 #
@@ -49,21 +49,20 @@ class RunCommandException(Exception):
 class host_thread(threading.Thread):
     lvirt_module = None
 
-    def __init__(self, name, host, user, db, db_lock, test, image_path, host_id, version, develop_mode,
+    def __init__(self, name, host, user, db, test, image_path, host_id, version, develop_mode,
                  develop_bridge_iface, password=None, keyfile = None, logger_name=None, debug=None, hypervisors=None):
         """Init a thread to communicate with compute node or ovs_controller.
         :param host_id: host identity
         :param name: name of the thread
         :param host: host ip or name to manage and user
         :param user, password, keyfile: user and credentials to connect to host
-        :param db, db_lock': database class and lock to use it in exclusion
+        :param db: database class, threading safe
         """
         threading.Thread.__init__(self)
         self.name = name
         self.host = host
         self.user = user
         self.db = db
-        self.db_lock = db_lock
         self.test = test
         self.password = password
         self.keyfile = keyfile
@@ -322,9 +321,7 @@ class host_thread(threading.Thread):
                 self.logger.error("save_localinfo Exception: " + text)
 
     def load_servers_from_db(self):
-        self.db_lock.acquire()
         r,c = self.db.get_table(SELECT=('uuid','status', 'image_id'), FROM='instances', WHERE={'host_id': self.host_id})
-        self.db_lock.release()
 
         self.server_status = {}
         if r<0:
@@ -722,9 +719,7 @@ class host_thread(threading.Thread):
         bridge_interfaces = server.get('networks', [])
         for v in bridge_interfaces:
             #Get the brifge name
-            self.db_lock.acquire()
             result, content = self.db.get_table(FROM='nets', SELECT=('provider',),WHERE={'uuid':v['net_id']} )
-            self.db_lock.release()
             if result <= 0:
                 self.logger.error("create_xml_server ERROR %d getting nets %s", result, content)
                 return -1, content
@@ -917,12 +912,10 @@ class host_thread(threading.Thread):
         :param net_uuid: network id
         :return: True if is not free
         """
-        self.db_lock.acquire()
         result, content = self.db.get_table(
             FROM='ports',
             WHERE={'type': 'instance:ovs', 'net_id': net_uuid}
         )
-        self.db_lock.release()
 
         if len(content) > 0:
             return False
@@ -937,12 +930,10 @@ class host_thread(threading.Thread):
         :return: True if is not free
         """
 
-        self.db_lock.acquire()
         result, content = self.db.get_table(
             FROM='ports as p join instances as i on p.instance_id=i.uuid',
             WHERE={"i.host_id": self.host_id, 'p.type': 'instance:ovs', 'p.net_id': net_uuid}
         )
-        self.db_lock.release()
 
         if len(content) > 0:
             return False
@@ -1825,9 +1816,7 @@ class host_thread(threading.Thread):
                 #self.server_status[server_id] = 'ACTIVE'
                 return 0, 'Success'
 
-            self.db_lock.acquire()
             result, server_data = self.db.get_instance(server_id)
-            self.db_lock.release()
             if result <= 0:
                 self.logger.error("launch_server ERROR getting server from DB %d %s", result, server_data)
                 return result, server_data
@@ -1871,10 +1860,8 @@ class host_thread(threading.Thread):
 
                     continue
                 else:
-                    self.db_lock.acquire()
                     result, content = self.db.get_table(FROM='images', SELECT=('path', 'metadata'),
                                                         WHERE={'uuid': image_id})
-                    self.db_lock.release()
                     if result <= 0:
                         error_text = "ERROR", result, content, "when getting image", dev['image_id']
                         self.logger.error("launch_server " + error_text)
@@ -1998,9 +1985,7 @@ class host_thread(threading.Thread):
             STATUS={'progress':100, 'status':new_status}
             if new_status == 'ERROR':
                 STATUS['last_error'] = 'machine has crashed'
-            self.db_lock.acquire()
             r,_ = self.db.update_rows('instances', STATUS, {'uuid':server_id}, log=False)
-            self.db_lock.release()
             if r>=0:
                 self.server_status[server_id] = new_status
                         
@@ -2206,22 +2191,18 @@ class host_thread(threading.Thread):
             elif 'terminate' in req['action']:
                 #PUT a log in the database
                 self.logger.error("PANIC deleting server id='%s' %s", server_id, last_error)
-                self.db_lock.acquire()
-                self.db.new_row('logs', 
+                self.db.new_row('logs',
                             {'uuid':server_id, 'tenant_id':req['tenant_id'], 'related':'instances','level':'panic',
                              'description':'PANIC deleting server from host '+self.name+': '+last_error}
                         )
-                self.db_lock.release()
                 if server_id in self.server_status:
                     del self.server_status[server_id]
                 return -1
             else:
                 UPDATE['last_error'] = last_error
         if new_status != 'deleted' and (new_status != old_status or new_status == 'ERROR') :
-            self.db_lock.acquire()
             self.db.update_rows('instances', UPDATE, {'uuid':server_id}, log=True)
             self.server_status[server_id] = new_status
-            self.db_lock.release()
         if new_status == 'ERROR':
             return -1
         return 1
@@ -2308,21 +2289,17 @@ class host_thread(threading.Thread):
                     self.logger.error("create_image id='%s' Exception: %s", server_id, error_text)
 
                 #TODO insert a last_error at database
-        self.db_lock.acquire()
-        self.db.update_rows('images', {'status':image_status, 'progress': 100, 'path':file_dst}, 
+        self.db.update_rows('images', {'status':image_status, 'progress': 100, 'path':file_dst},
                 {'uuid':req['new_image']['uuid']}, log=True)
-        self.db_lock.release()
-  
+
     def edit_iface(self, port_id, old_net, new_net):
         #This action imply remove and insert interface to put proper parameters
         if self.test:
             time.sleep(1)
         else:
         #get iface details
-            self.db_lock.acquire()
             r,c = self.db.get_table(FROM='ports as p join resources_port as rp on p.uuid=rp.port_id',
                                     WHERE={'port_id': port_id})
-            self.db_lock.release()
             if r<0:
                 self.logger.error("edit_iface %s DDBB error: %s", port_id, c)
                 return
@@ -2367,7 +2344,7 @@ class host_thread(threading.Thread):
                 if conn is not None: conn.close()
 
 
-def create_server(server, db, db_lock, only_of_ports):
+def create_server(server, db, only_of_ports):
     extended = server.get('extended', None)
     requirements={}
     requirements['numa']={'memory':0, 'proc_req_type': 'threads', 'proc_req_nb':0, 'port_list':[], 'sriov_list':[]}
@@ -2454,10 +2431,8 @@ def create_server(server, db, db_lock, only_of_ports):
 
     if 'hypervisor' in server: requirements['hypervisor'] = server['hypervisor']   #Unikernels extension
 
-    db_lock.acquire()
     result, content = db.get_numas(requirements, server.get('host_id', None), only_of_ports)
-    db_lock.release()
-    
+
     if result == -1:
         return (-1, content)
     
@@ -2468,11 +2443,9 @@ def create_server(server, db, db_lock, only_of_ports):
     cpu_pinning = []
     reserved_threads=[]
     if requirements['numa']['proc_req_nb']>0:
-        db_lock.acquire()
-        result, content = db.get_table(FROM='resources_core', 
+        result, content = db.get_table(FROM='resources_core',
                                        SELECT=('id','core_id','thread_id'),
                                        WHERE={'numa_id':numa_id,'instance_id': None, 'status':'ok'} )
-        db_lock.release()
         if result <= 0:
             #print content
             return -1, content
@@ -2556,9 +2529,7 @@ def create_server(server, db, db_lock, only_of_ports):
         #Get the source pci addresses for the selected numa
         used_sriov_ports = []
         for port in requirements['numa']['sriov_list']:
-            db_lock.acquire()
             result, content = db.get_table(FROM='resources_port', SELECT=('id', 'pci', 'mac'),WHERE={'numa_id':numa_id,'root_id': port['port_id'], 'port_id': None, 'Mbps_used': 0} )
-            db_lock.release()
             if result <= 0:
                 #print content
                 return -1, content
@@ -2580,9 +2551,7 @@ def create_server(server, db, db_lock, only_of_ports):
                 port['mac_address'] = port['mac']
                 del port['mac']
                 continue
-            db_lock.acquire()
             result, content = db.get_table(FROM='resources_port', SELECT=('id', 'pci', 'mac', 'Mbps'),WHERE={'numa_id':numa_id,'root_id': port['port_id'], 'port_id': None, 'Mbps_used': 0} )
-            db_lock.release()
             if result <= 0:
                 #print content
                 return -1, content
@@ -2621,13 +2590,11 @@ def create_server(server, db, db_lock, only_of_ports):
     for control_iface in server.get('networks', []):
         control_iface['net_id']=control_iface.pop('uuid')
         #Get the brifge name
-        db_lock.acquire()
         result, content = db.get_table(FROM='nets',
                                        SELECT=('name', 'type', 'vlan', 'provider', 'enable_dhcp','dhcp_first_ip',
                                                'dhcp_last_ip', 'cidr', 'gateway_ip', 'dns', 'links', 'routes'),
                                        WHERE={'uuid': control_iface['net_id']})
-        db_lock.release()
-        if result < 0: 
+        if result < 0:
             pass
         elif result==0:
             return -1, "Error at field netwoks: Not found any network wit uuid %s" % control_iface['net_id']

@@ -1197,7 +1197,7 @@ class vim_db():
                         numa_id = str(k['id'])
                         numa_dict = {}
                         # get memory
-                        cmd = "SELECT consumed FROM resources_mem WHERE instance_id = '{}' AND numa_id = '{}'".foramt(
+                        cmd = "SELECT consumed FROM resources_mem WHERE instance_id = '{}' AND numa_id = '{}'".format(
                             instance_id, numa_id)
                         self.logger.debug(cmd)
                         self.cur.execute(cmd)

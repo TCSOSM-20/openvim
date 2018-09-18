@@ -79,7 +79,7 @@ class vim_db():
         Following calls can skip this parameters
         """
         try:
-            with self.lock, self.con:
+            with self.lock:
                 if host:
                     self.host = host
                     self.con = None

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ##
-# Copyright 2015 Telefónica Investigación y Desarrollo, S.A.U.
+# Copyright 2015 Telefonica Investigacion y Desarrollo, S.A.U.
 # This file is part of openvim
 # All Rights Reserved.
 #
@@ -162,7 +162,8 @@ DBPORT_="-P$DBPORT"
 
 
 echo "    loading ${DIRNAME}/vim_db_structure.sql"
-sed -e "s/{{vim_db}}/$DBNAME/" ${DIRNAME}/vim_db_structure.sql |  mysql $DEF_EXTRA_FILE_PARAM
+sed -e "s/{{vim_db}}/$DBNAME/" ${DIRNAME}/vim_db_structure.sql | mysql $DEF_EXTRA_FILE_PARAM ||
+    ! echo "ERROR at init $DBNAME" || exit 1
 
 echo  "    loading ${DIRNAME}/host_ranking.sql"
 mysql $DEF_EXTRA_FILE_PARAM $DBNAME < ${DIRNAME}/host_ranking.sql

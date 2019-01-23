@@ -778,7 +778,7 @@ of_port_new_schema = {
         "ofc_id": id_schema,
         "region": nameshort_schema,
         "compute_node": nameshort_schema,
-        "pci": pci_extended_schema,
+        "pci": {"OneOf": [{"type": "null"}, pci_extended_schema]},
         "switch_dpid": nameshort_schema,
         "switch_port": nameshort_schema,
         "switch_mac": mac_schema

@@ -28,7 +28,7 @@ def delete_tmp_yaml(name):
 def search_host_in_env_var():
     """
     Search for OPENVIM_TEST_HOST_X env var declare by pre_create_host fixture with the host id after creation. 
-    :return: All env vars founded
+    :return: All env vars found
     """
     return search('OPENVIM_TEST_HOST_')
 

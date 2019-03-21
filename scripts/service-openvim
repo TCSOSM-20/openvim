@@ -203,7 +203,7 @@ do
            if [[ -z $component_id ]]
            then #process not started or finished
                [[ $log_lines -ge 2 ]] &&  echo -n "ERROR, it has exited." && break
-               #started because writted serveral lines at log so report error
+               #started because writted several lines at log so report error
            fi
            [[ -n $logfile ]] && [[ ${om_component} == flow ]] && grep -q "Listening for switch connections" ${logfile} && sleep 1 && break
            [[ -n $logfile ]] && [[ ${om_component} != flow ]] && grep -q "open${om_component}d ready" ${logfile} && break

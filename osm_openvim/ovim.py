@@ -543,7 +543,7 @@ class ovim():
         if tenant_id:
             result, _ = self.db.get_table(FROM='tenants', SELECT=('uuid',), WHERE={'uuid': tenant_id, "enabled": True})
             if result <= 0:
-                raise ovimException("set_network error, no tenant founded", -result)
+                raise ovimException("set_network error, no tenant found", -result)
 
         bridge_net = None
         # check valid params
@@ -984,7 +984,7 @@ class ovim():
         port_mapping_data = self.get_of_port_mappings(columns, db_filter)
 
         if not len(port_mapping_data):
-            raise ovimException("No port mapping founded for '{}'".format(str(db_filter)),
+            raise ovimException("No port mapping found for '{}'".format(str(db_filter)),
                                 HTTP_Not_Found)
         elif len(port_mapping_data) > 1:
             raise ovimException("Wrong port data was given, please check pci, region & compute id data",
